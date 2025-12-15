@@ -5,7 +5,7 @@ import {
   MessageSquare, ChevronRight, AlertTriangle, Crosshair, Box, ZoomIn, UserCheck,
   Upload, X, Brain, Server, Share2, Eye, Terminal, HardDrive, Wifi, Radio,
   BarChart3, Network, RefreshCw, AlertOctagon, ShieldCheck, FileDown, ToggleLeft, ToggleRight,
-  GitGraph, Link
+  Link
 } from 'lucide-react';
 
 // --- DATA CONFIGURATION ---
@@ -405,7 +405,7 @@ const CaseDashboard = ({ caseData, onBack }) => {
 
       <div className="flex-1 flex overflow-hidden">
         <aside className="w-72 border-r border-cyan-900/30 bg-black/40 p-4 overflow-y-auto space-y-3 custom-scrollbar">
-          <ActionButton id="analysis" label="DETAILED ANALYSIS" icon={GitGraph} />
+          <ActionButton id="analysis" label="DETAILED ANALYSIS" icon={Share2} />
           <ActionButton id="recon" label="SCENE RECONSTRUCTION" icon={Box} subItems={["3D Walkthrough", "2D Floorplan", "Comic Panel Sequence"]} />
           <ActionButton id="timeline" label="TIMELINE GEN" icon={Clock} />
           <ActionButton id="hotspot" label="CRIME HOTSPOT" icon={Map} />
