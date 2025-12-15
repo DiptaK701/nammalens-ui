@@ -426,7 +426,6 @@ const CaseDashboard = ({ caseData, onBack }) => {
             </div>
           )}
           {activePanel === 'recon' && (<div className="w-full h-full border border-dashed border-cyan-800 rounded flex items-center justify-center text-cyan-700 font-mono text-xs">[ 3D RENDER VIEWPORT INITIALIZING... ]</div>)}
-          {/* Placeholders for other panels */}
           {['timeline', 'hotspot', 'clues'].includes(activePanel) && (<div className="text-cyan-800 font-mono text-xs">[ MODULE LOADING... ]</div>)}
         </main>
         <div className="w-80 bg-black/60 flex flex-col border-l border-cyan-900/30">
