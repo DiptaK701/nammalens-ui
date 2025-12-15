@@ -127,7 +127,7 @@ const JarvisCore = ({ onEnter }) => {
         <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
           <div className="text-cyan-400 mb-1 animate-pulse-fast"><Aperture className="w-10 h-10 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]" /></div>
           <div className="font-orbitron font-bold text-lg text-white tracking-widest leading-tight drop-shadow-[0_0_5px_black]">NAMMALENS</div>
-          <div className="text-[8px] font-mono text-amber-400 mt-2 uppercase tracking-wide bg-amber-900/20 px-2 py-0.5 rounded border border-amber-500/30">Powered by Koushiki</div>
+          <div className="text-xs font-mono text-amber-400 mt-2 uppercase tracking-wide bg-amber-900/20 px-2 py-0.5 rounded border border-amber-500/30">Powered by Koushiki</div>
         </div>
       </button>
 
