@@ -1182,7 +1182,7 @@ const InvestigationBoardEmbed = ({ caseData }) => {
                   return (
                     <button key={item.id} onClick={() => addToBoard(item)} disabled={onBoard}
                       className={`w-full text-left p-1.5 rounded mb-0.5 text-[9px] transition-all ${onBoard ? 'bg-gray-800/30 text-gray-600 cursor-not-allowed'
-                          : 'bg-gray-900/50 hover:bg-gray-800 text-gray-300'}`}
+                        : 'bg-gray-900/50 hover:bg-gray-800 text-gray-300'}`}
                       style={{ borderLeftColor: onBoard ? undefined : nodeType.color, borderLeftWidth: onBoard ? 1 : 2 }}>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px]">{getNodeIcon(item.type)}</span>
@@ -1288,7 +1288,7 @@ const InvestigationBoardEmbed = ({ caseData }) => {
               <div key={i} className={`p-1.5 rounded mb-1.5 border ${isApplied ? 'bg-purple-900/10 border-purple-800/30' : 'bg-gray-900/50 border-gray-800'}`}>
                 <div className="flex justify-between items-center mb-1">
                   <span className={`text-[8px] font-mono px-1 py-0.5 rounded ${suggestion.confidence >= 90 ? 'bg-green-900/50 text-green-400' :
-                      suggestion.confidence >= 70 ? 'bg-amber-900/50 text-amber-400' : 'bg-red-900/50 text-red-400'
+                    suggestion.confidence >= 70 ? 'bg-amber-900/50 text-amber-400' : 'bg-red-900/50 text-red-400'
                     }`}>{suggestion.confidence}%</span>
                   {!isApplied && (
                     <button onClick={() => applySuggestion(suggestion)}
@@ -1375,12 +1375,11 @@ const SelectionMenu = ({ onSelect }) => {
         <h2 className="text-3xl md:text-4xl font-orbitron font-black text-white tracking-[0.15em] mb-2">COMMAND MODULE</h2>
         <div className="w-24 h-px bg-gray-700 mx-auto"></div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16">
         <OrbButton title="NAMMALENS" sub="CONTENT ENGINE" icon={Layers} color="gray" disabled={true} />
         <OrbButton title="KOUSHIKI ENGINE" sub="5 CASE DEMO" icon={Database} color="cyan" onClick={() => onSelect('demo')} />
         <OrbButton title="KOUSHIKI ENGINE" sub="LIVE ANALYSIS" icon={Activity} color="amber" onClick={() => onSelect('live')} />
-        <OrbButton title="INVESTIGATION" sub="RED THREAD BOARD" icon={Search} color="red" onClick={() => onSelect('investigation')} />
-        <OrbButton title="SYSTEM ADMIN" sub="RESTRICTED" icon={Key} color="gray" onClick={() => onSelect('admin')} />
+        <OrbButton title="SYSTEM ADMIN" sub="RESTRICTED" icon={Key} color="red" onClick={() => onSelect('admin')} />
       </div>
     </div>
   );
@@ -2666,7 +2665,6 @@ export default function App() {
     if (mode === 'demo') setView('demo-list');
     else if (mode === 'admin') setView('admin');
     else if (mode === 'live') setView('live');
-    else if (mode === 'investigation') setView('investigation');
     else console.log(`Selected Mode: ${mode}`);
   };
 
@@ -2737,19 +2735,13 @@ export default function App() {
         </main>
       )}
 
-      {view === 'investigation' && (
-        <main className="relative z-30 w-full h-full flex justify-center">
-          <InvestigationBoard onBack={() => setView('selection')} />
-        </main>
-      )}
-
       {view === 'case-dashboard' && selectedCase && (
         <main className="absolute inset-0 z-40 w-full h-full">
           <CaseDashboard caseData={selectedCase} onBack={() => setView('demo-list')} />
         </main>
       )}
 
-      {view !== 'case-dashboard' && view !== 'live' && view !== 'admin-dashboard' && view !== 'investigation' && (
+      {view !== 'case-dashboard' && view !== 'live' && view !== 'admin-dashboard' && (
         <footer className="absolute bottom-0 w-full p-8 flex justify-between items-end pointer-events-none opacity-0 animate-fade-in-up z-20" style={{ animationDelay: '1s', animationFillMode: 'forwards' }}>
           <div className="text-[9px] text-gray-500 font-mono leading-relaxed opacity-50">KOUSHIKI META-LEARNING PLATFORM © 2025</div>
           <div className="flex gap-4 text-cyan-900 font-mono text-[9px]"><span>VER 2.4.0</span><span>LATENCY: 12ms</span></div>
