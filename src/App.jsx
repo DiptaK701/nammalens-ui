@@ -140,6 +140,55 @@ const CASE_QUALITY_DATA = {
   }
 };
 
+// --- INVESTIGATION BOARD: EVIDENCE ITEMS ---
+const EVIDENCE_ITEMS = {
+  aarushi: [
+    // Documents
+    { id: 'doc-1', type: 'document', label: 'Witness Statement - Bharti', timestamp: '2008-05-16T08:00', category: 'Documents' },
+    { id: 'doc-2', type: 'document', label: 'Police FIR #423/08', timestamp: '2008-05-16T06:00', category: 'Documents' },
+    { id: 'doc-3', type: 'document', label: 'Autopsy Report', timestamp: '2008-05-17T14:00', category: 'Documents' },
+    { id: 'doc-4', type: 'document', label: 'Phone Records Analysis', timestamp: '2008-05-16T10:00', category: 'Documents' },
+    // Photos
+    { id: 'photo-1', type: 'photo', label: 'Crime Scene - Terrace', timestamp: '2008-05-16T07:30', category: 'Photos' },
+    { id: 'photo-2', type: 'photo', label: 'Crime Scene - Bedroom', timestamp: '2008-05-16T07:15', category: 'Photos' },
+    { id: 'photo-3', type: 'photo', label: 'CCTV Frame - Gate', timestamp: '2008-05-15T23:30', category: 'Photos' },
+    // Persons
+    { id: 'victim-1', type: 'victim', label: 'Aarushi Talwar', role: 'Primary Victim', category: 'Persons' },
+    { id: 'victim-2', type: 'victim', label: 'Hemraj Banjade', role: 'Second Victim', category: 'Persons' },
+    { id: 'suspect-1', type: 'suspect', label: 'Suspect A', role: 'Person of Interest', category: 'Persons' },
+    { id: 'suspect-2', type: 'suspect', label: 'Suspect B', role: 'Person of Interest', category: 'Persons' },
+    { id: 'witness-1', type: 'witness', label: 'Witness - Neighbor', role: 'Witness', category: 'Persons' },
+    // Locations
+    { id: 'loc-1', type: 'location', label: 'L-32 Jalvayu Vihar', coords: '28.57°N, 77.35°E', category: 'Locations' },
+    { id: 'loc-2', type: 'location', label: 'Terrace Access', coords: 'Building Roof', category: 'Locations' },
+    // Events
+    { id: 'event-1', type: 'event', label: 'Last Seen Alive', timestamp: '2008-05-15T22:00', category: 'Events' },
+    { id: 'event-2', type: 'event', label: 'Body Discovered', timestamp: '2008-05-16T06:00', category: 'Events' },
+    { id: 'event-3', type: 'event', label: 'Internet Router Activity', timestamp: '2008-05-15T23:30', category: 'Events' }
+  ]
+};
+
+// --- AI SUGGESTED CORRELATIONS ---
+const AI_SUGGESTED_LINKS = [
+  { from: 'suspect-1', to: 'loc-1', confidence: 94, reason: 'Cell tower data places suspect within 500m radius at 23:15', tool: 'OSINT Pod' },
+  { from: 'suspect-1', to: 'event-3', confidence: 78, reason: 'Internet activity matches suspects known patterns', tool: 'NLP Pod' },
+  { from: 'victim-1', to: 'event-1', confidence: 99, reason: 'Last phone activity timestamp', tool: 'Forensics Pod' },
+  { from: 'photo-3', to: 'suspect-2', confidence: 65, reason: 'Partial silhouette match - low confidence', tool: 'Vision Pod' },
+  { from: 'doc-1', to: 'suspect-1', confidence: 82, reason: 'Witness statement mentions suspect by description', tool: 'NLP Pod' }
+];
+
+// --- BOARD NODE TYPE STYLING ---
+const BOARD_NODE_TYPES = {
+  victim: { color: '#ef4444', bgColor: 'rgba(239,68,68,0.2)', borderColor: '#dc2626', icon: 'User', shape: 'circle' },
+  suspect: { color: '#f97316', bgColor: 'rgba(249,115,22,0.2)', borderColor: '#ea580c', icon: 'UserX', shape: 'hexagon' },
+  witness: { color: '#3b82f6', bgColor: 'rgba(59,130,246,0.2)', borderColor: '#2563eb', icon: 'Eye', shape: 'circle' },
+  location: { color: '#22c55e', bgColor: 'rgba(34,197,94,0.2)', borderColor: '#16a34a', icon: 'MapPin', shape: 'diamond' },
+  event: { color: '#a855f7', bgColor: 'rgba(168,85,247,0.2)', borderColor: '#9333ea', icon: 'Clock', shape: 'rect' },
+  document: { color: '#6b7280', bgColor: 'rgba(107,114,128,0.2)', borderColor: '#4b5563', icon: 'FileText', shape: 'rect' },
+  photo: { color: '#06b6d4', bgColor: 'rgba(6,182,212,0.2)', borderColor: '#0891b2', icon: 'Image', shape: 'rect' },
+  audio: { color: '#eab308', bgColor: 'rgba(234,179,8,0.2)', borderColor: '#ca8a04', icon: 'Mic', shape: 'circle' }
+};
+
 
 const StarfieldBackground = () => {
   const canvasRef = useRef(null);
@@ -642,6 +691,396 @@ const CaseMetadataPanel = ({ caseId = 'aarushi' }) => {
   );
 };
 
+// --- INVESTIGATION BOARD (Red Thread Evidence Correlation) ---
+const InvestigationBoard = ({ onBack }) => {
+  const evidence = EVIDENCE_ITEMS.aarushi || [];
+  const aiSuggestions = AI_SUGGESTED_LINKS;
+
+  // Canvas state
+  const [boardNodes, setBoardNodes] = useState([]);
+  const [connections, setConnections] = useState([]);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [draggedNode, setDraggedNode] = useState(null);
+  const [connecting, setConnecting] = useState(null); // {from: nodeId, tempX, tempY}
+  const [appliedSuggestions, setAppliedSuggestions] = useState([]);
+
+  // Categories for sidebar
+  const categories = ['Persons', 'Documents', 'Photos', 'Locations', 'Events'];
+
+  // Add evidence to board
+  const addToBoard = (item) => {
+    if (boardNodes.find(n => n.id === item.id)) return; // Already on board
+    const newNode = {
+      ...item,
+      x: 400 + Math.random() * 200 - 100,
+      y: 250 + Math.random() * 100 - 50
+    };
+    setBoardNodes([...boardNodes, newNode]);
+  };
+
+  // Handle node drag
+  const handleNodeMouseDown = (e, node) => {
+    e.stopPropagation();
+    if (e.shiftKey) {
+      // Start connecting
+      setConnecting({ from: node.id, tempX: node.x, tempY: node.y });
+    } else {
+      setDraggedNode(node.id);
+      setSelectedNode(node);
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (draggedNode) {
+      setBoardNodes(nodes => nodes.map(n =>
+        n.id === draggedNode ? { ...n, x, y } : n
+      ));
+    }
+    if (connecting) {
+      setConnecting({ ...connecting, tempX: x, tempY: y });
+    }
+  };
+
+  const handleMouseUp = (e, targetNode) => {
+    if (connecting && targetNode && targetNode.id !== connecting.from) {
+      // Create connection
+      const newConn = {
+        id: `conn-${Date.now()}`,
+        from: connecting.from,
+        to: targetNode.id,
+        type: 'user'
+      };
+      setConnections([...connections, newConn]);
+    }
+    setDraggedNode(null);
+    setConnecting(null);
+  };
+
+  // Apply AI suggestion
+  const applySuggestion = (suggestion) => {
+    if (appliedSuggestions.includes(suggestion.from + suggestion.to)) return;
+
+    // Add nodes if not on board
+    const fromItem = evidence.find(e => e.id === suggestion.from);
+    const toItem = evidence.find(e => e.id === suggestion.to);
+
+    let newNodes = [...boardNodes];
+    if (fromItem && !boardNodes.find(n => n.id === fromItem.id)) {
+      newNodes.push({ ...fromItem, x: 300 + Math.random() * 100, y: 200 + Math.random() * 100 });
+    }
+    if (toItem && !boardNodes.find(n => n.id === toItem.id)) {
+      newNodes.push({ ...toItem, x: 500 + Math.random() * 100, y: 300 + Math.random() * 100 });
+    }
+    setBoardNodes(newNodes);
+
+    // Add connection
+    setConnections([...connections, {
+      id: `ai-${Date.now()}`,
+      from: suggestion.from,
+      to: suggestion.to,
+      type: 'ai',
+      confidence: suggestion.confidence
+    }]);
+    setAppliedSuggestions([...appliedSuggestions, suggestion.from + suggestion.to]);
+  };
+
+  // Get node position for connections
+  const getNodePos = (nodeId) => {
+    const node = boardNodes.find(n => n.id === nodeId);
+    return node ? { x: node.x, y: node.y } : null;
+  };
+
+  // Node type to icon mapping
+  const getNodeIcon = (type) => {
+    const icons = { victim: '👤', suspect: '🔴', witness: '👁️', location: '📍', event: '⏰', document: '📄', photo: '🖼️', audio: '🎤' };
+    return icons[type] || '📌';
+  };
+
+  return (
+    <div className="w-full h-[calc(100vh-2rem)] flex flex-col bg-[#0a0a0a] relative z-40 mt-8">
+      {/* Header */}
+      <header className="border-b border-gray-800 bg-[#0d0d0d]">
+        <div className="h-14 flex items-center justify-between px-5">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="p-1.5 hover:bg-gray-800 rounded text-gray-500 hover:text-gray-300">
+              <ArrowLeftIcon />
+            </button>
+            <div className="w-px h-6 bg-gray-800"></div>
+            <div>
+              <h2 className="text-base font-medium text-white tracking-wide">Investigation Board</h2>
+              <div className="text-[10px] font-mono text-gray-600 mt-0.5">AARUSHI CASE • RED THREAD ANALYSIS</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-[9px] text-gray-500 font-mono">SHIFT+DRAG to connect</div>
+            <div className="flex items-center gap-2 px-2.5 py-1 bg-red-950/30 border border-red-900/50 rounded text-[9px] font-mono text-red-400">
+              <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+              {connections.length} LINKS
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left: Evidence Gallery */}
+        <div className="w-56 bg-black/60 border-r border-gray-800/50 flex flex-col overflow-hidden">
+          <div className="p-3 border-b border-gray-800">
+            <div className="text-xs font-bold text-cyan-400 tracking-wider">EVIDENCE GALLERY</div>
+            <div className="text-[9px] text-gray-500 mt-1">Click to add to board</div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+            {categories.map(category => {
+              const items = evidence.filter(e => e.category === category);
+              if (items.length === 0) return null;
+              return (
+                <div key={category} className="mb-3">
+                  <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1 px-1">{category}</div>
+                  {items.map(item => {
+                    const nodeType = BOARD_NODE_TYPES[item.type] || BOARD_NODE_TYPES.document;
+                    const onBoard = boardNodes.find(n => n.id === item.id);
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => addToBoard(item)}
+                        disabled={onBoard}
+                        className={`w-full text-left p-2 rounded mb-1 text-[10px] transition-all ${onBoard
+                          ? 'bg-gray-800/30 text-gray-600 cursor-not-allowed'
+                          : 'bg-gray-900/50 hover:bg-gray-800 text-gray-300 hover:text-white border border-gray-800 hover:border-gray-700'
+                          }`}
+                        style={{ borderLeftColor: onBoard ? undefined : nodeType.color, borderLeftWidth: onBoard ? 1 : 3 }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{getNodeIcon(item.type)}</span>
+                          <span className="truncate">{item.label}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Center: Canvas */}
+        <div className="flex-1 relative bg-[#080808] overflow-hidden">
+          {/* Grid background */}
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'radial-gradient(circle, #333 1px, transparent 1px)',
+            backgroundSize: '20px 20px'
+          }}></div>
+
+          <svg
+            className="w-full h-full relative z-10 cursor-crosshair"
+            onMouseMove={handleMouseMove}
+            onMouseUp={() => { setDraggedNode(null); setConnecting(null); }}
+            onMouseLeave={() => { setDraggedNode(null); setConnecting(null); }}
+          >
+            {/* Connections */}
+            {connections.map(conn => {
+              const fromPos = getNodePos(conn.from);
+              const toPos = getNodePos(conn.to);
+              if (!fromPos || !toPos) return null;
+              return (
+                <g key={conn.id}>
+                  <line
+                    x1={fromPos.x} y1={fromPos.y}
+                    x2={toPos.x} y2={toPos.y}
+                    stroke={conn.type === 'ai' ? '#a855f7' : '#ef4444'}
+                    strokeWidth={conn.type === 'ai' ? 1.5 : 2}
+                    strokeDasharray={conn.type === 'ai' ? '5,5' : undefined}
+                    opacity={0.8}
+                  />
+                  {conn.confidence && (
+                    <text
+                      x={(fromPos.x + toPos.x) / 2}
+                      y={(fromPos.y + toPos.y) / 2 - 8}
+                      fill="#a855f7"
+                      fontSize="9"
+                      textAnchor="middle"
+                    >
+                      {conn.confidence}%
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* Temp connection line while dragging */}
+            {connecting && (
+              <line
+                x1={getNodePos(connecting.from)?.x || 0}
+                y1={getNodePos(connecting.from)?.y || 0}
+                x2={connecting.tempX}
+                y2={connecting.tempY}
+                stroke="#ef4444"
+                strokeWidth={2}
+                strokeDasharray="5,5"
+                opacity={0.6}
+              />
+            )}
+
+            {/* Nodes */}
+            {boardNodes.map(node => {
+              const nodeType = BOARD_NODE_TYPES[node.type] || BOARD_NODE_TYPES.document;
+              const isSelected = selectedNode?.id === node.id;
+              return (
+                <g
+                  key={node.id}
+                  transform={`translate(${node.x}, ${node.y})`}
+                  onMouseDown={(e) => handleNodeMouseDown(e, node)}
+                  onMouseUp={(e) => handleMouseUp(e, node)}
+                  style={{ cursor: 'grab' }}
+                >
+                  {/* Selection glow */}
+                  {isSelected && (
+                    <circle r={45} fill="none" stroke={nodeType.color} strokeWidth={2} strokeDasharray="4,4" opacity={0.6} />
+                  )}
+                  {/* Node circle */}
+                  <circle
+                    r={32}
+                    fill={nodeType.bgColor}
+                    stroke={nodeType.borderColor}
+                    strokeWidth={isSelected ? 3 : 2}
+                  />
+                  {/* Icon */}
+                  <text
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize="18"
+                    dy="-4"
+                  >
+                    {getNodeIcon(node.type)}
+                  </text>
+                  {/* Label */}
+                  <text
+                    textAnchor="middle"
+                    fill={nodeType.color}
+                    fontSize="8"
+                    dy="18"
+                    fontWeight="bold"
+                  >
+                    {node.label.length > 15 ? node.label.substring(0, 15) + '...' : node.label}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Empty state */}
+          {boardNodes.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-center text-gray-600">
+                <div className="text-4xl mb-3">🔍</div>
+                <div className="text-sm font-medium">Add evidence from the sidebar</div>
+                <div className="text-[10px] mt-1">Click items to place on board</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right: AI Suggestions */}
+        <div className="w-64 bg-black/60 border-l border-gray-800/50 flex flex-col overflow-hidden">
+          <div className="p-3 border-b border-gray-800">
+            <div className="flex items-center gap-2">
+              <Brain className="w-4 h-4 text-purple-400" />
+              <span className="text-xs font-bold text-purple-300 tracking-wider">AI INSIGHTS</span>
+            </div>
+            <div className="text-[9px] text-gray-500 mt-1">Koushiki-suggested links</div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+            {aiSuggestions.map((suggestion, i) => {
+              const fromItem = evidence.find(e => e.id === suggestion.from);
+              const toItem = evidence.find(e => e.id === suggestion.to);
+              const isApplied = appliedSuggestions.includes(suggestion.from + suggestion.to);
+
+              return (
+                <div key={i} className={`p-2 rounded mb-2 border ${isApplied ? 'bg-purple-900/10 border-purple-800/30' : 'bg-gray-900/50 border-gray-800'}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-1">
+                      <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${suggestion.confidence >= 90 ? 'bg-green-900/50 text-green-400' :
+                        suggestion.confidence >= 70 ? 'bg-amber-900/50 text-amber-400' :
+                          'bg-red-900/50 text-red-400'
+                        }`}>
+                        {suggestion.confidence}%
+                      </span>
+                      <span className="text-[8px] text-gray-600">{suggestion.tool}</span>
+                    </div>
+                    {!isApplied && (
+                      <button
+                        onClick={() => applySuggestion(suggestion)}
+                        className="text-[8px] px-1.5 py-0.5 bg-purple-900/30 text-purple-400 rounded hover:bg-purple-800/30"
+                      >
+                        Apply
+                      </button>
+                    )}
+                    {isApplied && (
+                      <span className="text-[8px] text-purple-500">✓ Applied</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-gray-300 mb-1">
+                    {fromItem?.label || suggestion.from} → {toItem?.label || suggestion.to}
+                  </div>
+                  <div className="text-[9px] text-gray-500">{suggestion.reason}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Selected node detail */}
+          {selectedNode && (
+            <div className="border-t border-gray-800 p-3 bg-gray-900/30">
+              <div className="text-[10px] text-gray-500 uppercase mb-1">Selected</div>
+              <div className="text-sm text-white font-medium">{selectedNode.label}</div>
+              <div className="text-[10px] text-gray-400 mt-1 capitalize">{selectedNode.type}</div>
+              {selectedNode.timestamp && (
+                <div className="text-[9px] text-cyan-400 mt-1">{selectedNode.timestamp}</div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom: Timeline */}
+      <div className="h-16 bg-black/80 border-t border-gray-800 flex items-center px-4">
+        <div className="text-[10px] text-gray-500 mr-4 font-mono">TIMELINE</div>
+        <div className="flex-1 relative h-8">
+          <div className="absolute inset-0 border-t border-gray-700 top-1/2"></div>
+          {/* Timeline markers */}
+          {['22:00', '23:00', '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00'].map((time, i) => (
+            <div key={time} className="absolute top-1/2 -translate-y-1/2" style={{ left: `${i * 12}%` }}>
+              <div className="w-0.5 h-3 bg-gray-600"></div>
+              <div className="text-[8px] text-gray-600 mt-1">{time}</div>
+            </div>
+          ))}
+          {/* Events on timeline */}
+          {boardNodes.filter(n => n.timestamp).map(node => {
+            const time = new Date(node.timestamp);
+            const hour = time.getHours();
+            const offset = ((hour - 22 + 24) % 24) * 12 / 8;
+            return (
+              <div
+                key={node.id}
+                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform"
+                style={{
+                  left: `${Math.max(0, Math.min(offset, 100))}%`,
+                  backgroundColor: BOARD_NODE_TYPES[node.type]?.color || '#888'
+                }}
+                title={`${node.label} - ${node.timestamp}`}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const JarvisCore = ({ onEnter }) => {
   return (
     <div className="relative w-[500px] h-[500px] flex items-center justify-center perspective-1000 group z-20 scale-75 md:scale-100">
@@ -711,11 +1150,12 @@ const SelectionMenu = ({ onSelect }) => {
         <h2 className="text-3xl md:text-4xl font-orbitron font-black text-white tracking-[0.15em] mb-2">COMMAND MODULE</h2>
         <div className="w-24 h-px bg-gray-700 mx-auto"></div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
         <OrbButton title="NAMMALENS" sub="CONTENT ENGINE" icon={Layers} color="gray" disabled={true} />
         <OrbButton title="KOUSHIKI ENGINE" sub="5 CASE DEMO" icon={Database} color="cyan" onClick={() => onSelect('demo')} />
         <OrbButton title="KOUSHIKI ENGINE" sub="LIVE ANALYSIS" icon={Activity} color="amber" onClick={() => onSelect('live')} />
-        <OrbButton title="SYSTEM ADMIN" sub="RESTRICTED" icon={Key} color="red" onClick={() => onSelect('admin')} />
+        <OrbButton title="INVESTIGATION" sub="RED THREAD BOARD" icon={Search} color="red" onClick={() => onSelect('investigation')} />
+        <OrbButton title="SYSTEM ADMIN" sub="RESTRICTED" icon={Key} color="gray" onClick={() => onSelect('admin')} />
       </div>
     </div>
   );
@@ -1973,6 +2413,7 @@ export default function App() {
     if (mode === 'demo') setView('demo-list');
     else if (mode === 'admin') setView('admin');
     else if (mode === 'live') setView('live');
+    else if (mode === 'investigation') setView('investigation');
     else console.log(`Selected Mode: ${mode}`);
   };
 
@@ -2043,13 +2484,19 @@ export default function App() {
         </main>
       )}
 
+      {view === 'investigation' && (
+        <main className="relative z-30 w-full h-full flex justify-center">
+          <InvestigationBoard onBack={() => setView('selection')} />
+        </main>
+      )}
+
       {view === 'case-dashboard' && selectedCase && (
         <main className="absolute inset-0 z-40 w-full h-full">
           <CaseDashboard caseData={selectedCase} onBack={() => setView('demo-list')} />
         </main>
       )}
 
-      {view !== 'case-dashboard' && view !== 'live' && view !== 'admin-dashboard' && (
+      {view !== 'case-dashboard' && view !== 'live' && view !== 'admin-dashboard' && view !== 'investigation' && (
         <footer className="absolute bottom-0 w-full p-8 flex justify-between items-end pointer-events-none opacity-0 animate-fade-in-up z-20" style={{ animationDelay: '1s', animationFillMode: 'forwards' }}>
           <div className="text-[9px] text-gray-500 font-mono leading-relaxed opacity-50">KOUSHIKI META-LEARNING PLATFORM © 2025</div>
           <div className="flex gap-4 text-cyan-900 font-mono text-[9px]"><span>VER 2.4.0</span><span>LATENCY: 12ms</span></div>
