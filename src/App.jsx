@@ -325,92 +325,368 @@ const CaseList = ({ onSelectCase, onBack }) => {
   );
 };
 
-// --- COMPONENT 5.1: ENTITY NEXUS GRAPH (NEW) ---
+// --- COMPONENT 5.1: INTERACTIVE ENTITY NEXUS GRAPH ---
 const EntityNexus = ({ caseData }) => {
-  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
+  const [nodes, setNodes] = useState([]);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [draggedNode, setDraggedNode] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+  // Define connections between nodes
+  const links = [
+    { source: 1, target: 2, label: 'connected to' },
+    { source: 1, target: 3, label: 'related to' },
+    { source: 1, target: 4, label: 'found at' },
+    { source: 2, target: 4, label: 'seen at' },
+    { source: 5, target: 2, label: 'identified' },
+    { source: 5, target: 1, label: 'witnessed' }
+  ];
+
+  // Initialize nodes based on container size
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    let width = canvas.width = canvas.parentElement.clientWidth;
-    let height = canvas.height = canvas.parentElement.clientHeight;
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current;
+        setDimensions({ width: clientWidth, height: clientHeight });
 
-    // Mock Nodes based on case
-    const nodes = [
-      { id: 1, label: "VICTIM", type: 'victim', x: width / 2, y: height / 2, color: '#f59e0b' },
-      { id: 2, label: "SUSPECT A", type: 'suspect', x: width / 2 - 150, y: height / 2 - 50, color: '#ef4444' },
-      { id: 3, label: "WEAPON", type: 'evidence', x: width / 2 + 120, y: height / 2 + 80, color: '#06b6d4' },
-      { id: 4, label: "LOC_HOME", type: 'location', x: width / 2 - 80, y: height / 2 + 150, color: '#22c55e' },
-      { id: 5, label: "WITNESS", type: 'person', x: width / 2 + 180, y: height / 2 - 100, color: '#a855f7' }
-    ];
+        // Initialize nodes with positions based on container
+        const centerX = clientWidth / 2;
+        const centerY = clientHeight / 2;
 
-    const links = [
-      { source: 1, target: 2 },
-      { source: 1, target: 3 },
-      { source: 1, target: 4 },
-      { source: 2, target: 4 },
-      { source: 5, target: 2 }
-    ];
-
-    const draw = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      // Draw Links
-      ctx.lineWidth = 1;
-      links.forEach(link => {
-        const s = nodes.find(n => n.id === link.source);
-        const t = nodes.find(n => n.id === link.target);
-        ctx.strokeStyle = 'rgba(6, 182, 212, 0.3)';
-        ctx.beginPath();
-        ctx.moveTo(s.x, s.y);
-        ctx.lineTo(t.x, t.y);
-        ctx.stroke();
-      });
-
-      // Draw Nodes
-      nodes.forEach(node => {
-        // Glow
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = node.color;
-        ctx.fillStyle = node.color;
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        // Label
-        ctx.fillStyle = '#ccc';
-        ctx.font = '10px "Orbitron", monospace';
-        ctx.fillText(node.label, node.x + 12, node.y + 4);
-      });
-
-      // Gentle animation
-      nodes.forEach(n => {
-        n.x += (Math.random() - 0.5) * 0.5;
-        n.y += (Math.random() - 0.5) * 0.5;
-      });
-
-      requestAnimationFrame(draw);
+        setNodes([
+          { id: 1, label: "VICTIM", type: 'victim', x: centerX, y: centerY, color: '#f59e0b', details: 'Primary subject of investigation. Age 24, last seen 2024-01-15.' },
+          { id: 2, label: "SUSPECT A", type: 'suspect', x: centerX - 180, y: centerY - 80, color: '#ef4444', details: 'Person of interest. Known associate, no alibi for critical window.' },
+          { id: 3, label: "WEAPON", type: 'evidence', x: centerX + 150, y: centerY + 100, color: '#06b6d4', details: 'Blunt object recovered from scene. Forensics pending.' },
+          { id: 4, label: "LOC_HOME", type: 'location', x: centerX - 100, y: centerY + 180, color: '#22c55e', details: 'Primary crime scene. Noida Sector 25, Apartment 32.' },
+          { id: 5, label: "WITNESS", type: 'person', x: centerX + 200, y: centerY - 120, color: '#a855f7', details: 'Eyewitness testimony. Neighbor, reported suspicious activity at 22:30.' },
+          { id: 6, label: "VEHICLE", type: 'evidence', x: centerX + 80, y: centerY - 60, color: '#06b6d4', details: 'White sedan spotted near scene. Partial plate captured.' },
+          { id: 7, label: "TIMELINE", type: 'data', x: centerX - 200, y: centerY + 60, color: '#8b5cf6', details: 'Critical window: 21:00 - 23:30. Cell data gaps detected.' }
+        ]);
+      }
     };
 
-    draw();
-
-    const handleResize = () => {
-      width = canvas.width = canvas.parentElement.clientWidth;
-      height = canvas.height = canvas.parentElement.clientHeight;
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
+  // Handle mouse/touch events for dragging
+  const handleMouseDown = (e, node) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const svg = containerRef.current.querySelector('svg');
+    const rect = svg.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setDraggedNode(node.id);
+    setDragOffset({ x: x - node.x, y: y - node.y });
+    setSelectedNode(node.id);
+  };
+
+  const handleMouseMove = (e) => {
+    if (draggedNode === null) return;
+
+    const svg = containerRef.current.querySelector('svg');
+    const rect = svg.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setNodes(prev => prev.map(node =>
+      node.id === draggedNode
+        ? { ...node, x: x - dragOffset.x, y: y - dragOffset.y }
+        : node
+    ));
+  };
+
+  const handleMouseUp = () => {
+    setDraggedNode(null);
+  };
+
+  const handleNodeClick = (e, node) => {
+    e.stopPropagation();
+    setSelectedNode(selectedNode === node.id ? null : node.id);
+  };
+
+  const handleBackgroundClick = () => {
+    setSelectedNode(null);
+  };
+
+  const getNodeById = (id) => nodes.find(n => n.id === id);
+  const selectedNodeData = selectedNode ? getNodeById(selectedNode) : null;
+
+  // Get connections for selected node
+  const getConnections = (nodeId) => {
+    return links
+      .filter(l => l.source === nodeId || l.target === nodeId)
+      .map(l => {
+        const otherId = l.source === nodeId ? l.target : l.source;
+        const otherNode = getNodeById(otherId);
+        return otherNode ? otherNode.label : null;
+      })
+      .filter(Boolean);
+  };
+
   return (
-    <div className="w-full h-full relative">
-      <canvas ref={canvasRef} className="absolute inset-0" />
+    <div
+      ref={containerRef}
+      className="w-full h-full relative select-none"
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      <svg
+        width={dimensions.width}
+        height={dimensions.height}
+        className="absolute inset-0"
+        onClick={handleBackgroundClick}
+        style={{ cursor: draggedNode ? 'grabbing' : 'default' }}
+      >
+        {/* Background grid pattern */}
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(6, 182, 212, 0.05)" strokeWidth="1" />
+          </pattern>
+
+          {/* Glow filters for each node color */}
+          <filter id="glow-amber" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feFlood floodColor="#f59e0b" floodOpacity="0.6" />
+            <feComposite in2="blur" operator="in" />
+            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feFlood floodColor="#ef4444" floodOpacity="0.6" />
+            <feComposite in2="blur" operator="in" />
+            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="glow-cyan" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feFlood floodColor="#06b6d4" floodOpacity="0.6" />
+            <feComposite in2="blur" operator="in" />
+            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feFlood floodColor="#22c55e" floodOpacity="0.6" />
+            <feComposite in2="blur" operator="in" />
+            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="glow-purple" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feFlood floodColor="#a855f7" floodOpacity="0.6" />
+            <feComposite in2="blur" operator="in" />
+            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="glow-violet" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feFlood floodColor="#8b5cf6" floodOpacity="0.6" />
+            <feComposite in2="blur" operator="in" />
+            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+
+          {/* Selection ring animation */}
+          <filter id="selection-glow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feFlood floodColor="#ffffff" floodOpacity="0.8" />
+            <feComposite in2="blur" operator="in" />
+            <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        {/* Draw connection lines */}
+        {links.map((link, i) => {
+          const source = getNodeById(link.source);
+          const target = getNodeById(link.target);
+          if (!source || !target) return null;
+
+          const isConnectedToSelected = selectedNode === link.source || selectedNode === link.target;
+
+          return (
+            <g key={i}>
+              <line
+                x1={source.x}
+                y1={source.y}
+                x2={target.x}
+                y2={target.y}
+                stroke={isConnectedToSelected ? 'rgba(6, 182, 212, 0.6)' : 'rgba(6, 182, 212, 0.2)'}
+                strokeWidth={isConnectedToSelected ? 2 : 1}
+                style={{ transition: 'stroke 0.2s, stroke-width 0.2s' }}
+              />
+              {/* Connection label on hover/select */}
+              {isConnectedToSelected && (
+                <text
+                  x={(source.x + target.x) / 2}
+                  y={(source.y + target.y) / 2 - 5}
+                  fill="rgba(6, 182, 212, 0.7)"
+                  fontSize="8"
+                  textAnchor="middle"
+                  fontFamily="monospace"
+                >
+                  {link.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Draw nodes */}
+        {nodes.map(node => {
+          const isSelected = selectedNode === node.id;
+          const isDragging = draggedNode === node.id;
+          const glowFilter = node.color === '#f59e0b' ? 'url(#glow-amber)'
+            : node.color === '#ef4444' ? 'url(#glow-red)'
+              : node.color === '#06b6d4' ? 'url(#glow-cyan)'
+                : node.color === '#22c55e' ? 'url(#glow-green)'
+                  : node.color === '#8b5cf6' ? 'url(#glow-violet)'
+                    : 'url(#glow-purple)';
+
+          return (
+            <g
+              key={node.id}
+              style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+              onMouseDown={(e) => handleMouseDown(e, node)}
+              onClick={(e) => handleNodeClick(e, node)}
+            >
+              {/* Selection ring */}
+              {isSelected && (
+                <circle
+                  cx={node.x}
+                  cy={node.y}
+                  r={18}
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.4)"
+                  strokeWidth="2"
+                  strokeDasharray="4 2"
+                  style={{ animation: 'spin 8s linear infinite' }}
+                />
+              )}
+
+              {/* Outer glow ring on hover/select */}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={isSelected ? 14 : 10}
+                fill={`${node.color}20`}
+                stroke={node.color}
+                strokeWidth={isSelected ? 2 : 1}
+                strokeOpacity={isSelected ? 0.8 : 0.4}
+                style={{ transition: 'r 0.2s, stroke-width 0.2s' }}
+              />
+
+              {/* Main node circle */}
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r={isSelected ? 8 : 6}
+                fill={node.color}
+                filter={glowFilter}
+                style={{ transition: 'r 0.2s' }}
+              />
+
+              {/* Node label */}
+              <text
+                x={node.x + (isSelected ? 22 : 15)}
+                y={node.y + 4}
+                fill={isSelected ? '#fff' : '#aaa'}
+                fontSize={isSelected ? '11' : '10'}
+                fontFamily="'Orbitron', monospace"
+                fontWeight={isSelected ? 'bold' : 'normal'}
+                style={{ transition: 'fill 0.2s, font-size 0.2s', pointerEvents: 'none' }}
+              >
+                {node.label}
+              </text>
+
+              {/* Type indicator */}
+              <text
+                x={node.x + (isSelected ? 22 : 15)}
+                y={node.y + 16}
+                fill="#666"
+                fontSize="8"
+                fontFamily="monospace"
+                style={{ pointerEvents: 'none' }}
+              >
+                {node.type.toUpperCase()}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Node Detail Panel */}
+      {selectedNodeData && (
+        <div className="absolute top-4 left-4 bg-black/80 border border-gray-700 rounded-lg p-4 max-w-xs backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: selectedNodeData.color, boxShadow: `0 0 8px ${selectedNodeData.color}` }}
+              />
+              <span className="text-sm font-bold text-white font-mono">{selectedNodeData.label}</span>
+            </div>
+            <button
+              onClick={() => setSelectedNode(null)}
+              className="text-gray-500 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="text-[10px] font-mono text-gray-500 uppercase tracking-wider mb-2">
+            Type: {selectedNodeData.type}
+          </div>
+
+          <p className="text-xs text-gray-300 leading-relaxed mb-3">
+            {selectedNodeData.details}
+          </p>
+
+          <div className="border-t border-gray-700 pt-2">
+            <div className="text-[9px] font-mono text-gray-500 uppercase tracking-wider mb-1">
+              Connections ({getConnections(selectedNodeData.id).length})
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {getConnections(selectedNodeData.id).map((conn, i) => (
+                <span key={i} className="px-1.5 py-0.5 bg-cyan-900/30 border border-cyan-800/50 rounded text-[9px] text-cyan-400 font-mono">
+                  {conn}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-3 text-[8px] text-gray-600 font-mono">
+            Drag to reposition • Click elsewhere to deselect
+          </div>
+        </div>
+      )}
+
+      {/* Legend */}
       <div className="absolute bottom-4 right-4 bg-black/60 border border-gray-800 p-2 rounded text-[9px] font-mono text-gray-400">
-        <div><span className="text-red-500">●</span> SUSPECT</div>
-        <div><span className="text-cyan-500">●</span> EVIDENCE</div>
-        <div><span className="text-green-500">●</span> LOCATION</div>
+        <div className="text-[8px] text-gray-600 mb-1.5 uppercase tracking-wider">Entity Types</div>
+        <div className="flex items-center gap-1.5 mb-1"><span className="text-red-500">●</span> SUSPECT</div>
+        <div className="flex items-center gap-1.5 mb-1"><span className="text-amber-500">●</span> VICTIM</div>
+        <div className="flex items-center gap-1.5 mb-1"><span className="text-cyan-500">●</span> EVIDENCE</div>
+        <div className="flex items-center gap-1.5 mb-1"><span className="text-green-500">●</span> LOCATION</div>
+        <div className="flex items-center gap-1.5 mb-1"><span className="text-purple-500">●</span> PERSON</div>
+        <div className="flex items-center gap-1.5"><span className="text-violet-500">●</span> DATA</div>
       </div>
+
+      {/* Instructions overlay (shows briefly) */}
+      <div className="absolute bottom-4 left-4 text-[9px] font-mono text-gray-600">
+        Click node to select • Drag to move
+      </div>
+
+      {/* CSS for selection animation */}
+      <style>{`
+        @keyframes spin {
+          from { transform-origin: center; transform: rotate(0deg); }
+          to { transform-origin: center; transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
