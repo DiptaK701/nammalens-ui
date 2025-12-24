@@ -40,8 +40,39 @@ const SYSTEM_PODS = [
   { id: 'orc', name: 'ORCHESTRA', port: 8110, icon: Share2, desc: 'System Core', sub: ['Routing', 'Fusion', 'Decision', 'Cross-Pod Coord'], advanced: true, version: '6.0', health: '100%', status: 'active', cpu: 10, mem: 512 },
 ];
 
+// --- DATA SOURCES (217+ Sources from Reference) ---
+const DATA_SOURCES = {
+  regional: { name: 'Regional News', count: 60, active: 58, sources: ['Bengali', 'Hindi', 'Tamil', 'Telugu', 'Malayalam', 'Kannada', 'Gujarati', 'Marathi', 'Punjabi', 'Odia'] },
+  english: { name: 'English News', count: 19, active: 19, sources: ['TOI', 'NDTV', 'Hindu', 'India Today', 'Reuters', 'BBC India'] },
+  legal: { name: 'Legal/Gov', count: 47, active: 45, sources: ['IndianKanoon', 'Data.gov.in', 'NCRB', 'Court Records', 'RTI Portal'] },
+  osint: { name: 'OSINT/Research', count: 58, active: 52, sources: ['Archives', 'Academic', 'Social Media', 'Forums'] },
+  darkweb: { name: 'Dark Web Intel', count: 15, active: 12, sources: ['Tor Monitors', 'Paste Sites', 'Markets'] },
+  multimedia: { name: 'YouTube/Media', count: 18, active: 18, sources: ['YouTube', 'Podcasts', 'Audio Archives'] }
+};
 
-// --- VISUAL ASSETS (BACKGROUNDS) ---
+// --- API INTEGRATIONS (37+ APIs from Reference) ---
+const API_INTEGRATIONS = {
+  tier1: { name: 'Premium AI', apis: ['Google Gemini', 'OpenAI GPT-4', 'Anthropic Claude', 'Poe', 'Grok'], status: 'active', color: 'purple' },
+  tier2: { name: 'Free/Open', apis: ['NewsAPI', 'HuggingFace', 'Comic Vine', 'Wikipedia'], status: 'active', color: 'cyan' },
+  content: { name: 'Content Gen', apis: ['Leonardo.ai', 'ElevenLabs', 'Stability AI', 'Midjourney'], status: 'active', color: 'amber' },
+  monitoring: { name: 'Monitoring', apis: ['UptimeRobot', 'Prometheus', 'Grafana', 'AlphaVantage'], status: 'active', color: 'green' }
+};
+
+// --- KOUSHIKI EVOLUTION TRACKING ---
+const KOUSHIKI_EVOLUTION = {
+  currentPhase: 3,
+  totalPhases: 5,
+  phaseName: 'Pattern Correlation',
+  phaseProgress: 55,
+  learningEvents: 2847,
+  patternsLearned: 156,
+  confidenceScore: 73,
+  cpiScore: { cost: 82, performance: 91, intelligence: 78 },
+  syntheticBoost: true,
+  chainValidation: 'VERIFIED',
+  lastEvolution: '2 hours ago'
+};
+
 
 const StarfieldBackground = () => {
   const canvasRef = useRef(null);
@@ -137,25 +168,35 @@ const SystemBar = () => {
   }, []);
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-8 bg-black/90 border-b border-gray-800/50 z-[60] flex items-center justify-between px-4 backdrop-blur-sm">
+    <div className="fixed top-0 left-0 right-0 h-8 bg-black/90 border-b border-gray-800/50 z-[60] flex items-center justify-between px-2 md:px-4 backdrop-blur-sm">
       {/* Left: Product Identity + Environment */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full"></div>
-          <span className="font-orbitron text-[11px] font-bold tracking-[0.15em] text-gray-100">NAMMALENS</span>
-          <span className="text-gray-600 text-[10px]">|</span>
-          <span className="font-mono text-[10px] text-gray-400 tracking-wide">Koushiki Engine</span>
+          <span className="font-orbitron text-[10px] md:text-[11px] font-bold tracking-[0.1em] md:tracking-[0.15em] text-gray-100">NAMMALENS</span>
+          <span className="text-gray-600 text-[10px] hidden md:inline">|</span>
+          <span className="font-mono text-[10px] text-gray-400 tracking-wide hidden md:inline">Koushiki Engine</span>
         </div>
-        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-900/30 border border-amber-700/50 rounded">
+        <div className="flex items-center gap-1.5 px-1.5 md:px-2 py-0.5 bg-amber-900/30 border border-amber-700/50 rounded">
           <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
-          <span className="font-mono text-[9px] font-medium text-amber-400 tracking-wider">DEV</span>
+          <span className="font-mono text-[8px] md:text-[9px] font-medium text-amber-400 tracking-wider">DEV</span>
+        </div>
+      </div>
+
+      {/* Center: Koushiki Phase (visible on md+) */}
+      <div className="hidden md:flex items-center gap-2 text-[9px] font-mono">
+        <Brain className="w-3 h-3 text-purple-400" />
+        <span className="text-gray-500">PHASE</span>
+        <span className="text-purple-400 font-bold">{KOUSHIKI_EVOLUTION.currentPhase}/5</span>
+        <div className="w-12 h-1 bg-gray-800 rounded overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-purple-600 to-cyan-500" style={{ width: `${KOUSHIKI_EVOLUTION.phaseProgress}%` }} />
         </div>
       </div>
 
       {/* Right: System Status & Time */}
-      <div className="flex items-center gap-4">
-        {/* System Health */}
-        <div className="flex items-center gap-2 text-[10px] font-mono">
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* System Health - hidden on mobile */}
+        <div className="hidden sm:flex items-center gap-2 text-[10px] font-mono">
           <span className="text-gray-500">SYS:</span>
           <div className="flex items-center gap-1">
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
@@ -163,19 +204,186 @@ const SystemBar = () => {
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="w-px h-3 bg-gray-700"></div>
+        {/* Divider - hidden on mobile */}
+        <div className="w-px h-3 bg-gray-700 hidden sm:block"></div>
 
         {/* Timestamp */}
-        <div className="font-mono text-[10px] text-gray-400 tracking-wider tabular-nums">
-          {time} <span className="text-gray-600">UTC+5:30</span>
+        <div className="font-mono text-[9px] md:text-[10px] text-gray-400 tracking-wider tabular-nums">
+          {time} <span className="text-gray-600 hidden sm:inline">UTC+5:30</span>
         </div>
       </div>
     </div>
   );
 };
 
-// --- COMPONENT 1: MAIN LANDING ORB ---
+// --- KOUSHIKI EVOLUTION PANEL (Shows AI Learning Progress) ---
+const KoushikiEvolutionPanel = () => {
+  const evo = KOUSHIKI_EVOLUTION;
+
+  return (
+    <div className="bg-black/60 border border-purple-900/30 rounded-lg p-4 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Brain className="w-4 h-4 text-purple-400" />
+          <span className="text-xs font-bold text-purple-300 tracking-wider">KOUSHIKI EVOLUTION</span>
+        </div>
+        <div className="text-[9px] font-mono text-gray-500">{evo.lastEvolution}</div>
+      </div>
+
+      {/* Phase Progress */}
+      <div className="mb-4">
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-[10px] font-mono text-gray-400">PHASE {evo.currentPhase}/{evo.totalPhases}</span>
+          <span className="text-[10px] font-mono text-purple-400">{evo.phaseName}</span>
+        </div>
+        <div className="w-full h-2 bg-gray-900 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-purple-600 to-cyan-500 transition-all duration-500"
+            style={{ width: `${evo.phaseProgress}%` }}
+          />
+        </div>
+        <div className="flex justify-between mt-1">
+          {[1, 2, 3, 4, 5].map(phase => (
+            <div key={phase} className={`w-4 h-4 rounded-full border-2 flex items-center justify-center text-[8px] font-bold
+              ${phase < evo.currentPhase ? 'bg-purple-500 border-purple-400 text-black' :
+                phase === evo.currentPhase ? 'bg-purple-900/50 border-purple-400 text-purple-300 animate-pulse' :
+                  'bg-gray-900 border-gray-700 text-gray-600'}`}>
+              {phase}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* CPI Score */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="bg-gray-900/50 rounded p-2 text-center">
+          <div className="text-[9px] text-gray-500 mb-1">COST</div>
+          <div className="text-sm font-bold text-green-400">{evo.cpiScore.cost}%</div>
+        </div>
+        <div className="bg-gray-900/50 rounded p-2 text-center">
+          <div className="text-[9px] text-gray-500 mb-1">PERF</div>
+          <div className="text-sm font-bold text-cyan-400">{evo.cpiScore.performance}%</div>
+        </div>
+        <div className="bg-gray-900/50 rounded p-2 text-center">
+          <div className="text-[9px] text-gray-500 mb-1">INTEL</div>
+          <div className="text-sm font-bold text-purple-400">{evo.cpiScore.intelligence}%</div>
+        </div>
+      </div>
+
+      {/* Metrics Row */}
+      <div className="flex justify-between text-[9px] font-mono border-t border-gray-800 pt-2">
+        <div className="text-gray-400">
+          <span className="text-gray-600">PATTERNS:</span> <span className="text-cyan-400">{evo.patternsLearned}</span>
+        </div>
+        <div className="text-gray-400">
+          <span className="text-gray-600">EVENTS:</span> <span className="text-amber-400">{evo.learningEvents.toLocaleString()}</span>
+        </div>
+        <div className={`flex items-center gap-1 ${evo.syntheticBoost ? 'text-green-400' : 'text-gray-600'}`}>
+          <div className={`w-1.5 h-1.5 rounded-full ${evo.syntheticBoost ? 'bg-green-500' : 'bg-gray-600'}`} />
+          SYNTH
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- DATA SOURCES PANEL (217+ Sources Visualization) ---
+const DataSourcesPanel = () => {
+  const totalSources = Object.values(DATA_SOURCES).reduce((acc, cat) => acc + cat.count, 0);
+  const activeSources = Object.values(DATA_SOURCES).reduce((acc, cat) => acc + cat.active, 0);
+
+  const categoryColors = {
+    regional: 'cyan',
+    english: 'blue',
+    legal: 'amber',
+    osint: 'green',
+    darkweb: 'red',
+    multimedia: 'purple'
+  };
+
+  return (
+    <div className="bg-black/60 border border-cyan-900/30 rounded-lg p-4 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Database className="w-4 h-4 text-cyan-400" />
+          <span className="text-xs font-bold text-cyan-300 tracking-wider">DATA SOURCES</span>
+        </div>
+        <div className="text-[10px] font-mono">
+          <span className="text-green-400">{activeSources}</span>
+          <span className="text-gray-600">/{totalSources} ACTIVE</span>
+        </div>
+      </div>
+
+      {/* Source Categories */}
+      <div className="space-y-2">
+        {Object.entries(DATA_SOURCES).map(([key, cat]) => {
+          const color = categoryColors[key];
+          const pct = Math.round((cat.active / cat.count) * 100);
+          return (
+            <div key={key} className="group">
+              <div className="flex justify-between items-center mb-0.5">
+                <span className={`text-[10px] font-mono text-${color}-400`}>{cat.name}</span>
+                <span className="text-[9px] text-gray-500">{cat.active}/{cat.count}</span>
+              </div>
+              <div className="w-full h-1 bg-gray-900 rounded overflow-hidden">
+                <div
+                  className={`h-full bg-${color}-500 transition-all`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Quick stats */}
+      <div className="mt-3 pt-2 border-t border-gray-800 flex justify-between text-[9px] font-mono text-gray-500">
+        <span>10 Languages</span>
+        <span>6 Categories</span>
+        <span className="text-green-400">{Math.round((activeSources / totalSources) * 100)}% Up</span>
+      </div>
+    </div>
+  );
+};
+
+// --- API STATUS PANEL ---
+const APIStatusPanel = () => {
+  return (
+    <div className="bg-black/60 border border-amber-900/30 rounded-lg p-4 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Link className="w-4 h-4 text-amber-400" />
+          <span className="text-xs font-bold text-amber-300 tracking-wider">API INTEGRATIONS</span>
+        </div>
+        <div className="text-[10px] font-mono text-green-400">37+ ACTIVE</div>
+      </div>
+
+      <div className="space-y-2">
+        {Object.entries(API_INTEGRATIONS).map(([key, tier]) => (
+          <div key={key} className={`bg-${tier.color}-900/10 border border-${tier.color}-900/30 rounded p-2`}>
+            <div className="flex justify-between items-center mb-1">
+              <span className={`text-[10px] font-bold text-${tier.color}-400`}>{tier.name}</span>
+              <div className="flex items-center gap-1">
+                <div className={`w-1.5 h-1.5 rounded-full bg-green-500`} />
+                <span className="text-[8px] text-gray-500">{tier.apis.length} APIs</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {tier.apis.slice(0, 3).map((api, i) => (
+                <span key={i} className="text-[8px] px-1.5 py-0.5 bg-gray-900/50 rounded text-gray-400">
+                  {api}
+                </span>
+              ))}
+              {tier.apis.length > 3 && (
+                <span className="text-[8px] px-1.5 py-0.5 text-gray-600">+{tier.apis.length - 3}</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 const JarvisCore = ({ onEnter }) => {
   return (
     <div className="relative w-[500px] h-[500px] flex items-center justify-center perspective-1000 group z-20 scale-75 md:scale-100">
@@ -1166,33 +1374,58 @@ const LiveAnalysisDashboard = ({ onBack }) => {
           </div>
         </div>
 
-        {/* SYSTEM STATUS HUD (Right Side) */}
-        <div className="w-64 bg-black/40 border-l border-amber-900/20 p-4 hidden lg:flex flex-col gap-4">
-          <div className="text-xs font-bold text-amber-500 font-orbitron mb-2 flex items-center gap-2"><Network className="w-3 h-3" /> FOUNDATION LAYER</div>
-          <div className="space-y-3">
-            {/* Synthetic Forensic Pod */}
-            <div className="bg-cyan-900/10 border border-cyan-900/30 p-3 rounded">
-              <div className="text-[10px] text-gray-400 mb-1 flex justify-between"><span>SYNTHETIC :8130</span><span className="text-cyan-400">17 PODS</span></div>
-              <div className="text-xs font-mono text-cyan-300">DATA AUGMENTATION</div>
-              <div className="w-full h-1 bg-gray-800 rounded mt-1"><div className="w-[85%] h-full bg-cyan-500"></div></div>
+        {/* SYSTEM STATUS HUD (Right Side) - Enhanced with new panels */}
+        <div className="w-80 bg-black/40 border-l border-gray-800/50 hidden lg:flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+            {/* Koushiki Evolution */}
+            <KoushikiEvolutionPanel />
+
+            {/* Data Sources */}
+            <DataSourcesPanel />
+
+            {/* API Integrations */}
+            <APIStatusPanel />
+
+            {/* Foundation Layer Status - Condensed */}
+            <div className="bg-black/60 border border-gray-800 rounded-lg p-4">
+              <div className="text-xs font-bold text-amber-500 font-orbitron mb-3 flex items-center gap-2">
+                <Network className="w-3 h-3" /> FOUNDATION LAYER
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="text-cyan-400">SYNTHETIC :8130</span>
+                  <span className="text-gray-400">17 pods • 85%</span>
+                </div>
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="text-amber-400">INFRA :8140</span>
+                  <span className="text-gray-400">19 pods • 100%</span>
+                </div>
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="text-purple-400">META-LEARN :8150</span>
+                  <span className="text-gray-400">16 pods • 60%</span>
+                </div>
+                <div className="flex justify-between items-center text-[10px] pt-2 border-t border-gray-800">
+                  <span className="text-gray-300">ORCHESTRATOR</span>
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                    <span className="text-green-400">18/18 UP</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            {/* Production Infra Pod */}
-            <div className="bg-amber-900/10 border border-amber-900/30 p-3 rounded">
-              <div className="text-[10px] text-gray-400 mb-1 flex justify-between"><span>INFRA :8140</span><span className="text-amber-400">19 PODS</span></div>
-              <div className="text-xs font-mono text-amber-300">CHAIN VALIDATION</div>
-              <div className="w-full h-1 bg-gray-800 rounded mt-1"><div className="w-full h-full bg-amber-500"></div></div>
-            </div>
-            {/* Meta-Learning Pod */}
-            <div className="bg-purple-900/10 border border-purple-900/30 p-3 rounded">
-              <div className="text-[10px] text-gray-400 mb-1 flex justify-between"><span>META-LEARN :8150</span><span className="text-purple-400">16 PODS</span></div>
-              <div className="text-xs font-mono text-purple-300">EVOLUTION LVL 2</div>
-              <div className="w-full h-1 bg-gray-800 rounded mt-1"><div className="w-[60%] h-full bg-purple-500"></div></div>
-            </div>
-            {/* Orchestrator */}
-            <div className="bg-gray-900/30 border border-gray-700 p-3 rounded">
-              <div className="text-[10px] text-gray-400 mb-1 flex justify-between"><span>ORCHESTRATOR :8110</span><span className="text-gray-300">NOMINAL</span></div>
-              <div className="text-xs font-mono text-gray-400">18/18 PODS UP</div>
-              <div className="w-full h-1 bg-gray-800 rounded mt-1"><div className="w-full h-full bg-green-500"></div></div>
+
+            {/* Chain Validation Status */}
+            <div className="bg-black/60 border border-green-900/30 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-green-400" />
+                  <span className="text-[10px] font-bold text-green-300">CHAIN VALIDATION</span>
+                </div>
+                <span className="text-[9px] font-mono text-green-400 bg-green-900/30 px-2 py-0.5 rounded">VERIFIED</span>
+              </div>
+              <div className="text-[9px] text-gray-500 mt-1">
+                Last validated: 2 min ago • NIST compliant
+              </div>
             </div>
           </div>
         </div>
