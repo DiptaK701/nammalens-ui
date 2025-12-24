@@ -73,6 +73,73 @@ const KOUSHIKI_EVOLUTION = {
   lastEvolution: '2 hours ago'
 };
 
+// --- CONFIDENCE PIPELINE (Per-Step Breakdown) ---
+const CONFIDENCE_PIPELINE = {
+  ocr: { name: 'OCR Accuracy', score: 78, status: 'warning', detail: 'Handwritten notes: 64%, Printed: 96%' },
+  entityExtraction: { name: 'Entity Extraction', score: 82, status: 'warning', detail: 'Cascaded from OCR quality' },
+  temporalAlignment: { name: 'Temporal Alignment', score: 99, status: 'good', detail: 'Phone records: high accuracy' },
+  dateDeduction: { name: 'Date Deduction', score: 91, status: 'good', detail: 'Cross-source validation' },
+  semanticSearch: { name: 'Semantic Search', score: 88, status: 'good', detail: 'BERT embeddings: 3072-dim' },
+  finalConfidence: { name: 'Final Timeline', score: 68, status: 'warning', detail: 'Limited by OCR quality' },
+  mainRisk: 'OCR errors from handwritten investigator notes (~200 pages)'
+};
+
+// --- SOP COMPLIANCE (CrPC §23, IPC §3) ---
+const SOP_COMPLIANCE = {
+  chainOfCustody: { status: 'complete', score: 100, detail: 'All 847 evidence items documented' },
+  evidenceStorage: { status: 'partial', score: 40, detail: '2/5 items lacked climate control per NIST' },
+  contaminationLog: { status: 'missing', score: 0, detail: 'Original 1993 files missing timestamps' },
+  digitalForensics: { status: 'complete', score: 100, detail: 'Volatility/PyTSK RAM dump correct' },
+  witnessProtocol: { status: 'complete', score: 95, detail: 'Video recorded per NHRC guidelines' },
+  overallRisk: 'Missing evidence storage documentation may be challenged in court'
+};
+
+// --- CASE QUALITY METADATA ---
+const CASE_QUALITY_DATA = {
+  'aarushi': {
+    evidenceAge: '17 years',
+    evidenceQuality: 'POOR',
+    qualityColor: 'red',
+    documentPages: 10000,
+    evidenceItems: 1247,
+    aiRecommendation: 'Prioritize OCR + NLP + Semantic Search. De-prioritize facial recognition.',
+    riskAssessment: {
+      timeline: { score: 55, reason: 'Document quality limits accuracy' },
+      witness: { score: 72, reason: '100+ conflicting statements' },
+      spatial: { score: 40, reason: 'Pre-GPS era, locations unreliable' }
+    },
+    biasWarnings: ['Facial recognition trained on Western demographics: expect 10-15% lower accuracy on Indian subjects']
+  },
+  'jessica': {
+    evidenceAge: '22 years',
+    evidenceQuality: 'FAIR',
+    qualityColor: 'amber',
+    documentPages: 3500,
+    evidenceItems: 892,
+    aiRecommendation: 'Focus on video forensics, cross-validate 100+ witness statements',
+    riskAssessment: {
+      timeline: { score: 78, reason: 'Good CCTV availability for 2003' },
+      witness: { score: 65, reason: 'Media bias documented in coverage' },
+      spatial: { score: 82, reason: 'Urban Delhi, multiple camera angles' }
+    },
+    biasWarnings: ['2003-era CCTV resolution limits facial matching accuracy to ~72%']
+  },
+  'default': {
+    evidenceAge: 'Unknown',
+    evidenceQuality: 'FAIR',
+    qualityColor: 'amber',
+    documentPages: 500,
+    evidenceItems: 150,
+    aiRecommendation: 'Standard multi-modal analysis pipeline',
+    riskAssessment: {
+      timeline: { score: 75, reason: 'Standard document quality' },
+      witness: { score: 80, reason: 'Limited witness pool' },
+      spatial: { score: 70, reason: 'GPS data available' }
+    },
+    biasWarnings: []
+  }
+};
+
 
 const StarfieldBackground = () => {
   const canvasRef = useRef(null);
@@ -384,6 +451,197 @@ const APIStatusPanel = () => {
     </div>
   );
 };
+
+// --- CONFIDENCE DASHBOARD (Per-Step Breakdown - Fixes Automation Bias) ---
+const ConfidenceDashboard = () => {
+  const pipeline = CONFIDENCE_PIPELINE;
+  const steps = ['ocr', 'entityExtraction', 'temporalAlignment', 'dateDeduction', 'semanticSearch', 'finalConfidence'];
+
+  const getStatusIcon = (status) => {
+    if (status === 'good') return { color: 'text-green-400', bg: 'bg-green-500', icon: '✓' };
+    if (status === 'warning') return { color: 'text-amber-400', bg: 'bg-amber-500', icon: '⚠' };
+    return { color: 'text-red-400', bg: 'bg-red-500', icon: '✗' };
+  };
+
+  return (
+    <div className="bg-black/60 border border-red-900/30 rounded-lg p-4 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-400" />
+          <span className="text-xs font-bold text-red-300 tracking-wider">CONFIDENCE BREAKDOWN</span>
+        </div>
+        <div className="text-[9px] font-mono text-gray-500">Per-Step Analysis</div>
+      </div>
+
+      {/* Pipeline Steps */}
+      <div className="space-y-2 mb-3">
+        {steps.map(key => {
+          const step = pipeline[key];
+          const status = getStatusIcon(step.status);
+          return (
+            <div key={key} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] ${status.color}`}>{status.icon}</span>
+                <span className="text-[10px] text-gray-300">{step.name}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-16 h-1.5 bg-gray-800 rounded overflow-hidden">
+                  <div
+                    className={`h-full ${step.status === 'good' ? 'bg-green-500' : step.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'}`}
+                    style={{ width: `${step.score}%` }}
+                  />
+                </div>
+                <span className={`text-[10px] font-mono ${status.color}`}>{step.score}%</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Risk Warning */}
+      <div className="bg-red-900/20 border border-red-800/50 rounded p-2 mt-2">
+        <div className="text-[9px] font-bold text-red-400 mb-1">⚠️ MAIN RISK</div>
+        <div className="text-[9px] text-gray-400">{pipeline.mainRisk}</div>
+      </div>
+    </div>
+  );
+};
+
+// --- SOP COMPLIANCE PANEL (CrPC §23, IPC §3) ---
+const SOPCompliancePanel = () => {
+  const sop = SOP_COMPLIANCE;
+  const items = ['chainOfCustody', 'evidenceStorage', 'contaminationLog', 'digitalForensics', 'witnessProtocol'];
+
+  const getStatusStyle = (status) => {
+    if (status === 'complete') return { color: 'text-green-400', icon: '✓', bg: 'bg-green-500' };
+    if (status === 'partial') return { color: 'text-amber-400', icon: '⚠', bg: 'bg-amber-500' };
+    return { color: 'text-red-400', icon: '✗', bg: 'bg-red-500' };
+  };
+
+  const labelMap = {
+    chainOfCustody: 'Chain of Custody',
+    evidenceStorage: 'Evidence Storage',
+    contaminationLog: 'Contamination Log',
+    digitalForensics: 'Digital Forensics',
+    witnessProtocol: 'Witness Protocol'
+  };
+
+  return (
+    <div className="bg-black/60 border border-amber-900/30 rounded-lg p-4 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-amber-400" />
+          <span className="text-xs font-bold text-amber-300 tracking-wider">SOP COMPLIANCE</span>
+        </div>
+        <div className="text-[9px] font-mono text-gray-500">CrPC §23</div>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        {items.map(key => {
+          const item = sop[key];
+          const status = getStatusStyle(item.status);
+          return (
+            <div key={key} className="group">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] ${status.color}`}>{status.icon}</span>
+                  <span className="text-[10px] text-gray-300">{labelMap[key]}</span>
+                </div>
+                <span className={`text-[9px] font-mono ${status.color}`}>
+                  {item.status === 'complete' ? 'OK' : item.status === 'partial' ? 'WARN' : 'FAIL'}
+                </span>
+              </div>
+              <div className="text-[8px] text-gray-600 ml-5 mt-0.5">{item.detail}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Overall Risk */}
+      <div className="bg-amber-900/20 border border-amber-800/50 rounded p-2">
+        <div className="text-[9px] font-bold text-amber-400 mb-1">⚖️ LEGAL RISK</div>
+        <div className="text-[9px] text-gray-400">{sop.overallRisk}</div>
+      </div>
+    </div>
+  );
+};
+
+// --- CASE METADATA PANEL (Evidence Quality Assessment) ---
+const CaseMetadataPanel = ({ caseId = 'aarushi' }) => {
+  const quality = CASE_QUALITY_DATA[caseId] || CASE_QUALITY_DATA['default'];
+
+  const qualityColors = {
+    POOR: 'red',
+    FAIR: 'amber',
+    GOOD: 'green'
+  };
+  const color = qualityColors[quality.evidenceQuality] || 'amber';
+
+  return (
+    <div className={`bg-black/60 border border-${color}-900/30 rounded-lg p-4 backdrop-blur-sm`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4" style={{ color: color === 'red' ? '#f87171' : color === 'amber' ? '#fbbf24' : '#4ade80' }} />
+          <span className="text-xs font-bold tracking-wider" style={{ color: color === 'red' ? '#fca5a5' : color === 'amber' ? '#fcd34d' : '#86efac' }}>
+            CASE METADATA
+          </span>
+        </div>
+        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded bg-${color}-900/30 text-${color}-400`}>
+          {quality.evidenceQuality}
+        </span>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="text-[10px]">
+          <span className="text-gray-500">Age:</span> <span className="text-gray-300">{quality.evidenceAge}</span>
+        </div>
+        <div className="text-[10px]">
+          <span className="text-gray-500">Pages:</span> <span className="text-gray-300">{quality.documentPages.toLocaleString()}</span>
+        </div>
+        <div className="text-[10px]">
+          <span className="text-gray-500">Items:</span> <span className="text-gray-300">{quality.evidenceItems}</span>
+        </div>
+      </div>
+
+      {/* Risk Assessment */}
+      <div className="space-y-1 mb-3">
+        <div className="text-[9px] text-gray-500 uppercase tracking-wider">Risk Assessment</div>
+        {Object.entries(quality.riskAssessment).map(([key, data]) => (
+          <div key={key} className="flex items-center justify-between">
+            <span className="text-[10px] text-gray-400 capitalize">{key}</span>
+            <div className="flex items-center gap-2">
+              <div className="w-12 h-1 bg-gray-800 rounded">
+                <div
+                  className={`h-full rounded ${data.score >= 70 ? 'bg-green-500' : data.score >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+                  style={{ width: `${data.score}%` }}
+                />
+              </div>
+              <span className="text-[9px] font-mono text-gray-500">{data.score}%</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* AI Recommendation */}
+      <div className="bg-gray-900/50 rounded p-2 mb-2">
+        <div className="text-[9px] text-cyan-400 mb-1">🤖 AI RECOMMENDATION</div>
+        <div className="text-[9px] text-gray-400">{quality.aiRecommendation}</div>
+      </div>
+
+      {/* Bias Warnings */}
+      {quality.biasWarnings.length > 0 && (
+        <div className="bg-red-900/20 border border-red-800/50 rounded p-2">
+          <div className="text-[9px] font-bold text-red-400 mb-1">⚠️ ALGORITHMIC BIAS WARNING</div>
+          {quality.biasWarnings.map((warning, i) => (
+            <div key={i} className="text-[9px] text-gray-400">{warning}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const JarvisCore = ({ onEnter }) => {
   return (
     <div className="relative w-[500px] h-[500px] flex items-center justify-center perspective-1000 group z-20 scale-75 md:scale-100">
@@ -1385,6 +1643,17 @@ const LiveAnalysisDashboard = ({ onBack }) => {
 
             {/* API Integrations */}
             <APIStatusPanel />
+
+            {/* === CRITICAL COMPLIANCE PANELS === */}
+
+            {/* Confidence Dashboard - Per-Step Breakdown */}
+            <ConfidenceDashboard />
+
+            {/* SOP Compliance - Legal Admissibility */}
+            <SOPCompliancePanel />
+
+            {/* Case Metadata - Quality Assessment */}
+            <CaseMetadataPanel caseId="aarushi" />
 
             {/* Foundation Layer Status - Condensed */}
             <div className="bg-black/60 border border-gray-800 rounded-lg p-4">
