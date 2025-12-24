@@ -1081,6 +1081,231 @@ const InvestigationBoard = ({ onBack }) => {
   );
 };
 
+// --- INVESTIGATION BOARD EMBED (For Case Context) ---
+const InvestigationBoardEmbed = ({ caseData }) => {
+  // Get case-specific evidence (fallback to aarushi for demo)
+  const caseKey = caseData?.title?.toLowerCase().includes('aarushi') ? 'aarushi' : 'aarushi';
+  const evidence = EVIDENCE_ITEMS[caseKey] || EVIDENCE_ITEMS.aarushi || [];
+  const aiSuggestions = AI_SUGGESTED_LINKS;
+
+  // Canvas state
+  const [boardNodes, setBoardNodes] = useState([]);
+  const [connections, setConnections] = useState([]);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [draggedNode, setDraggedNode] = useState(null);
+  const [connecting, setConnecting] = useState(null);
+  const [appliedSuggestions, setAppliedSuggestions] = useState([]);
+
+  const categories = ['Persons', 'Documents', 'Photos', 'Locations', 'Events'];
+
+  const addToBoard = (item) => {
+    if (boardNodes.find(n => n.id === item.id)) return;
+    setBoardNodes([...boardNodes, { ...item, x: 300 + Math.random() * 200, y: 200 + Math.random() * 150 }]);
+  };
+
+  const handleNodeMouseDown = (e, node) => {
+    e.stopPropagation();
+    if (e.shiftKey) {
+      setConnecting({ from: node.id, tempX: node.x, tempY: node.y });
+    } else {
+      setDraggedNode(node.id);
+      setSelectedNode(node);
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (draggedNode) {
+      setBoardNodes(nodes => nodes.map(n => n.id === draggedNode ? { ...n, x, y } : n));
+    }
+    if (connecting) {
+      setConnecting({ ...connecting, tempX: x, tempY: y });
+    }
+  };
+
+  const handleMouseUp = (e, targetNode) => {
+    if (connecting && targetNode && targetNode.id !== connecting.from) {
+      setConnections([...connections, { id: `conn-${Date.now()}`, from: connecting.from, to: targetNode.id, type: 'user' }]);
+    }
+    setDraggedNode(null);
+    setConnecting(null);
+  };
+
+  const applySuggestion = (suggestion) => {
+    if (appliedSuggestions.includes(suggestion.from + suggestion.to)) return;
+    const fromItem = evidence.find(e => e.id === suggestion.from);
+    const toItem = evidence.find(e => e.id === suggestion.to);
+    let newNodes = [...boardNodes];
+    if (fromItem && !boardNodes.find(n => n.id === fromItem.id)) {
+      newNodes.push({ ...fromItem, x: 250 + Math.random() * 100, y: 150 + Math.random() * 100 });
+    }
+    if (toItem && !boardNodes.find(n => n.id === toItem.id)) {
+      newNodes.push({ ...toItem, x: 400 + Math.random() * 100, y: 250 + Math.random() * 100 });
+    }
+    setBoardNodes(newNodes);
+    setConnections([...connections, { id: `ai-${Date.now()}`, from: suggestion.from, to: suggestion.to, type: 'ai', confidence: suggestion.confidence }]);
+    setAppliedSuggestions([...appliedSuggestions, suggestion.from + suggestion.to]);
+  };
+
+  const getNodePos = (nodeId) => {
+    const node = boardNodes.find(n => n.id === nodeId);
+    return node ? { x: node.x, y: node.y } : null;
+  };
+
+  const getNodeIcon = (type) => {
+    const icons = { victim: '👤', suspect: '🔴', witness: '👁️', location: '📍', event: '⏰', document: '📄', photo: '🖼️', audio: '🎤' };
+    return icons[type] || '📌';
+  };
+
+  return (
+    <div className="w-full h-full flex rounded-lg overflow-hidden border border-red-900/30 bg-black/40">
+      {/* Left: Evidence Gallery */}
+      <div className="w-48 bg-black/60 border-r border-gray-800/50 flex flex-col overflow-hidden">
+        <div className="p-2 border-b border-gray-800 bg-red-950/20">
+          <div className="text-[10px] font-bold text-red-400 tracking-wider">EVIDENCE</div>
+          <div className="text-[8px] text-gray-500">{caseData?.title || 'Case'} • {boardNodes.length} on board</div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-1.5 custom-scrollbar">
+          {categories.map(category => {
+            const items = evidence.filter(e => e.category === category);
+            if (items.length === 0) return null;
+            return (
+              <div key={category} className="mb-2">
+                <div className="text-[8px] text-gray-600 uppercase mb-0.5 px-1">{category}</div>
+                {items.map(item => {
+                  const nodeType = BOARD_NODE_TYPES[item.type] || BOARD_NODE_TYPES.document;
+                  const onBoard = boardNodes.find(n => n.id === item.id);
+                  return (
+                    <button key={item.id} onClick={() => addToBoard(item)} disabled={onBoard}
+                      className={`w-full text-left p-1.5 rounded mb-0.5 text-[9px] transition-all ${onBoard ? 'bg-gray-800/30 text-gray-600 cursor-not-allowed'
+                          : 'bg-gray-900/50 hover:bg-gray-800 text-gray-300'}`}
+                      style={{ borderLeftColor: onBoard ? undefined : nodeType.color, borderLeftWidth: onBoard ? 1 : 2 }}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px]">{getNodeIcon(item.type)}</span>
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Center: Canvas */}
+      <div className="flex-1 relative bg-[#060606] overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'radial-gradient(circle, #333 1px, transparent 1px)',
+          backgroundSize: '15px 15px'
+        }}></div>
+
+        <svg className="w-full h-full relative z-10 cursor-crosshair"
+          onMouseMove={handleMouseMove}
+          onMouseUp={() => { setDraggedNode(null); setConnecting(null); }}
+          onMouseLeave={() => { setDraggedNode(null); setConnecting(null); }}>
+
+          {connections.map(conn => {
+            const fromPos = getNodePos(conn.from);
+            const toPos = getNodePos(conn.to);
+            if (!fromPos || !toPos) return null;
+            return (
+              <g key={conn.id}>
+                <line x1={fromPos.x} y1={fromPos.y} x2={toPos.x} y2={toPos.y}
+                  stroke={conn.type === 'ai' ? '#a855f7' : '#ef4444'}
+                  strokeWidth={conn.type === 'ai' ? 1.5 : 2}
+                  strokeDasharray={conn.type === 'ai' ? '4,4' : undefined} opacity={0.8} />
+                {conn.confidence && (
+                  <text x={(fromPos.x + toPos.x) / 2} y={(fromPos.y + toPos.y) / 2 - 6}
+                    fill="#a855f7" fontSize="8" textAnchor="middle">{conn.confidence}%</text>
+                )}
+              </g>
+            );
+          })}
+
+          {connecting && (
+            <line x1={getNodePos(connecting.from)?.x || 0} y1={getNodePos(connecting.from)?.y || 0}
+              x2={connecting.tempX} y2={connecting.tempY}
+              stroke="#ef4444" strokeWidth={2} strokeDasharray="4,4" opacity={0.6} />
+          )}
+
+          {boardNodes.map(node => {
+            const nodeType = BOARD_NODE_TYPES[node.type] || BOARD_NODE_TYPES.document;
+            const isSelected = selectedNode?.id === node.id;
+            return (
+              <g key={node.id} transform={`translate(${node.x}, ${node.y})`}
+                onMouseDown={(e) => handleNodeMouseDown(e, node)}
+                onMouseUp={(e) => handleMouseUp(e, node)} style={{ cursor: 'grab' }}>
+                {isSelected && <circle r={38} fill="none" stroke={nodeType.color} strokeWidth={2} strokeDasharray="3,3" opacity={0.6} />}
+                <circle r={28} fill={nodeType.bgColor} stroke={nodeType.borderColor} strokeWidth={isSelected ? 2 : 1.5} />
+                <text textAnchor="middle" dominantBaseline="middle" fontSize="14" dy="-3">{getNodeIcon(node.type)}</text>
+                <text textAnchor="middle" fill={nodeType.color} fontSize="7" dy="14" fontWeight="bold">
+                  {node.label.length > 12 ? node.label.substring(0, 12) + '...' : node.label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+
+        {boardNodes.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-center text-gray-600">
+              <div className="text-3xl mb-2">🔍</div>
+              <div className="text-[11px] font-medium">Add evidence from sidebar</div>
+              <div className="text-[9px] mt-1">SHIFT+drag to connect</div>
+            </div>
+          </div>
+        )}
+
+        {/* Status bar */}
+        <div className="absolute bottom-2 left-2 flex items-center gap-2 text-[9px] font-mono">
+          <div className="flex items-center gap-1 px-2 py-1 bg-red-950/50 border border-red-900/50 rounded text-red-400">
+            <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+            {connections.length} LINKS
+          </div>
+          <div className="text-gray-600">SHIFT+DRAG to connect</div>
+        </div>
+      </div>
+
+      {/* Right: AI Suggestions */}
+      <div className="w-44 bg-black/60 border-l border-gray-800/50 flex flex-col overflow-hidden">
+        <div className="p-2 border-b border-gray-800 bg-purple-950/20">
+          <div className="flex items-center gap-1.5">
+            <Brain className="w-3 h-3 text-purple-400" />
+            <span className="text-[10px] font-bold text-purple-300">AI INSIGHTS</span>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-1.5 custom-scrollbar">
+          {aiSuggestions.map((suggestion, i) => {
+            const fromItem = evidence.find(e => e.id === suggestion.from);
+            const toItem = evidence.find(e => e.id === suggestion.to);
+            const isApplied = appliedSuggestions.includes(suggestion.from + suggestion.to);
+            return (
+              <div key={i} className={`p-1.5 rounded mb-1.5 border ${isApplied ? 'bg-purple-900/10 border-purple-800/30' : 'bg-gray-900/50 border-gray-800'}`}>
+                <div className="flex justify-between items-center mb-1">
+                  <span className={`text-[8px] font-mono px-1 py-0.5 rounded ${suggestion.confidence >= 90 ? 'bg-green-900/50 text-green-400' :
+                      suggestion.confidence >= 70 ? 'bg-amber-900/50 text-amber-400' : 'bg-red-900/50 text-red-400'
+                    }`}>{suggestion.confidence}%</span>
+                  {!isApplied && (
+                    <button onClick={() => applySuggestion(suggestion)}
+                      className="text-[7px] px-1 py-0.5 bg-purple-900/30 text-purple-400 rounded hover:bg-purple-800/30">Apply</button>
+                  )}
+                  {isApplied && <span className="text-[7px] text-purple-500">✓</span>}
+                </div>
+                <div className="text-[8px] text-gray-400 truncate">{fromItem?.label || '?'} → {toItem?.label || '?'}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const JarvisCore = ({ onEnter }) => {
   return (
     <div className="relative w-[500px] h-[500px] flex items-center justify-center perspective-1000 group z-20 scale-75 md:scale-100">
@@ -1603,6 +1828,7 @@ const CaseDashboard = ({ caseData, onBack }) => {
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState([{ role: 'system', text: `Accessing ${caseData.title} database. Forensic embeddings loaded. How can I assist?` }]);
   const [isCompiling, setIsCompiling] = useState(false);
+  const [showInvestigationBoard, setShowInvestigationBoard] = useState(false);
 
   const handleChat = (e) => {
     e.preventDefault();
@@ -1736,6 +1962,25 @@ const CaseDashboard = ({ caseData, onBack }) => {
           <div className="px-2 space-y-0.5">
             <ActionButton id="analysis" label="Entity Correlation" icon={Share2} />
             <ActionButton id="clues" label="Evidence Gaps" icon={Search} />
+
+            {/* Investigation Board - Special Button */}
+            <button
+              onClick={() => setShowInvestigationBoard(!showInvestigationBoard)}
+              className={`w-full py-2.5 px-3 rounded text-left flex items-center justify-between transition-all group
+                ${showInvestigationBoard
+                  ? 'bg-red-950/50 border-l-2 border-l-red-400 border-y border-r border-y-red-900/30 border-r-red-900/30 shadow-[inset_0_0_20px_rgba(239,68,68,0.1)]'
+                  : 'border-l-2 border-l-transparent hover:border-l-red-600 hover:bg-red-950/20'}`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className={`text-[11px] font-medium tracking-wide ${showInvestigationBoard ? 'text-white' : 'text-gray-400 group-hover:text-red-300'}`}>
+                  Investigation Board
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Search className={`w-3.5 h-3.5 ${showInvestigationBoard ? 'text-red-400' : 'text-gray-600 group-hover:text-red-500'}`} />
+                {showInvestigationBoard && <span className="text-[8px] text-red-400 font-mono">ACTIVE</span>}
+              </div>
+            </button>
           </div>
 
           {/* VISUALIZATION Section */}
@@ -1759,7 +2004,15 @@ const CaseDashboard = ({ caseData, onBack }) => {
         <main className="flex-1 bg-black/20 p-5 relative overflow-hidden flex flex-col">
           <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.2)_0%,transparent_70%)]"></div>
 
-          {activePanel === 'analysis' && (
+          {/* INVESTIGATION BOARD MODE */}
+          {showInvestigationBoard && (
+            <div className="w-full h-full relative z-10">
+              <InvestigationBoardEmbed caseData={caseData} />
+            </div>
+          )}
+
+          {/* NORMAL CONTENT MODE */}
+          {!showInvestigationBoard && activePanel === 'analysis' && (
             <div className="w-full h-full flex flex-col gap-4 relative z-10">
               {/* Status Bar - Situational Context */}
               <div className="flex items-center justify-between">
