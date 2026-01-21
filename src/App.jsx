@@ -5,7 +5,7 @@ import {
   MessageSquare, ChevronRight, AlertTriangle, Crosshair, Box, ZoomIn, UserCheck,
   Upload, X, Brain, Server, Share2, Eye, Terminal, HardDrive, Wifi, Radio,
   BarChart3, Network, RefreshCw, AlertOctagon, ShieldCheck, FileDown, ToggleLeft, ToggleRight,
-  Link
+  Link, Info, MapPin, Mail, Building2, Award
 } from 'lucide-react';
 
 // --- DATA CONFIGURATION ---
@@ -1306,7 +1306,7 @@ const InvestigationBoardEmbed = ({ caseData }) => {
   );
 };
 
-const JarvisCore = ({ onEnter }) => {
+const JarvisCore = ({ onEnter, onAbout }) => {
   return (
     <div className="relative w-[500px] h-[500px] flex items-center justify-center perspective-1000 group z-20 scale-75 md:scale-100">
       <JarvisRing size="100%" color="#00f2ff" speed="20s" dashArray="10 20 5 30" strokeWidth="0.5" opacity="0.6" />
@@ -1324,6 +1324,15 @@ const JarvisCore = ({ onEnter }) => {
           <div className="font-orbitron font-bold text-lg text-white tracking-widest leading-tight drop-shadow-[0_0_5px_black]">NAMMALENS</div>
           <div className="text-[8px] font-mono text-amber-400 mt-2 uppercase tracking-wide bg-amber-900/20 px-2 py-0.5 rounded border border-amber-500/30">Powered by Koushiki</div>
         </div>
+      </button>
+
+      {/* Info/About Button */}
+      <button
+        onClick={onAbout}
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2 bg-black/60 border border-gray-700/50 rounded-full text-gray-500 hover:text-cyan-400 hover:border-cyan-600/50 transition-all group/info backdrop-blur-sm"
+      >
+        <Info className="w-4 h-4" />
+        <span className="text-[10px] font-mono tracking-wider group-hover/info:text-cyan-400">ABOUT US</span>
       </button>
 
       {/* Floating Text */}
@@ -1349,11 +1358,11 @@ const OrbButton = ({ title, sub, icon: Icon, color, disabled, onClick }) => {
     gray: { ring: '#9ca3af', text: '#6b7280', bg: 'rgba(31, 41, 55, 0.5)', borderNormal: 'rgba(75, 85, 99, 0.3)', borderHover: 'rgba(75, 85, 99, 0.3)', shadowHover: 'none' }
   };
   const theme = disabled ? config.gray : config[color] || config.cyan;
-  const coreStyle = { backgroundColor: theme.bg, borderColor: isHovered && !disabled ? theme.borderHover : theme.borderNormal, boxShadow: isHovered && !disabled ? theme.shadowHover : '0 0 30px rgba(0,0,0,0.5)', transition: 'all 0.3s ease-out' };
+  const coreStyle = { backgroundColor: theme.bg, borderColor: isHovered && !disabled ? theme.borderHover : theme.borderNormal, boxShadow: isHovered && !disabled ? theme.shadowHover : 'none', transition: 'all 0.3s ease-out' };
 
   return (
     <div className={`relative w-64 h-64 flex items-center justify-center group ${disabled ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`} onClick={!disabled ? onClick : undefined} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      <div className={`absolute w-full h-full rounded-full border border-transparent transition-all duration-700 ${disabled ? '' : 'group-hover:scale-110'}`}><JarvisRing size="100%" color={theme.ring} speed={disabled ? "0s" : "20s"} dashArray="10 40 10 40" strokeWidth="0.5" opacity="0.3" paused={disabled} /></div>
+      <div className={`absolute w-full h-full rounded-full border border-transparent transition-all duration-700`}><JarvisRing size="100%" color={theme.ring} speed={disabled ? "0s" : "20s"} dashArray="10 40 10 40" strokeWidth="0.5" opacity="0.3" paused={disabled} /></div>
       <div className={`absolute w-48 h-48 rounded-full transition-all duration-700 ${disabled ? '' : 'group-hover:rotate-45'}`}><JarvisRing size="100%" color={theme.ring} speed={disabled ? "0s" : "15s"} reverse dashArray="60 20 60 20" strokeWidth="1" opacity="0.5" paused={disabled} /></div>
       <div className="absolute w-40 h-40 rounded-full border perspective-500" style={{ borderColor: theme.borderNormal }}>{!disabled && (<div className="absolute inset-0 rounded-full border-t-2 border-b-2 border-transparent group-hover:border-t-current group-hover:border-b-current transition-all duration-500 animate-spin-3d-slow" style={{ color: theme.ring }}></div>)}</div>
       <div className="absolute z-10 w-32 h-32 rounded-full backdrop-blur-md border-2 flex flex-col items-center justify-center p-2 text-center" style={coreStyle}>
@@ -1366,20 +1375,161 @@ const OrbButton = ({ title, sub, icon: Icon, color, disabled, onClick }) => {
   );
 };
 
+// --- ABOUT KOUSHIKI ENGINE COMPONENT ---
+const AboutKoushikiEngine = ({ onBack }) => {
+  return (
+    <div className="relative z-30 w-full max-w-4xl px-6 py-8 animate-fade-in-quick">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-8">
+        <button onClick={onBack} className="p-2 hover:bg-gray-800 rounded text-gray-500 hover:text-gray-300 transition-colors">
+          <ArrowLeftIcon />
+        </button>
+        <div>
+          <h2 className="text-2xl font-orbitron font-bold text-white tracking-wider">KOUSHIKI ENGINE</h2>
+          <div className="text-[11px] font-mono text-cyan-400 mt-1">AI-Powered Forensic Investigation Platform</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* About Section */}
+        <div className="bg-black/60 border border-cyan-900/30 rounded-lg p-6 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Info className="w-5 h-5 text-cyan-400" />
+            <h3 className="text-sm font-bold text-cyan-300 tracking-wider">ABOUT</h3>
+          </div>
+          <p className="text-sm text-gray-300 leading-relaxed">
+            Koushiki Engine is <span className="text-cyan-400 font-semibold">India's first AI-powered platform</span> for cold case
+            investigation, designed to assist law enforcement agencies in solving
+            unsolved cases from <span className="text-amber-400">1900-2025</span>.
+          </p>
+        </div>
+
+        {/* Technology Section */}
+        <div className="bg-black/60 border border-purple-900/30 rounded-lg p-6 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Cpu className="w-5 h-5 text-purple-400" />
+            <h3 className="text-sm font-bold text-purple-300 tracking-wider">TECHNOLOGY</h3>
+          </div>
+          <ul className="space-y-3">
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 bg-purple-500 rounded-full mt-1.5 flex-shrink-0"></div>
+              <span className="text-sm text-gray-300"><span className="text-purple-400 font-mono">18</span> specialized microservices pods</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 bg-cyan-500 rounded-full mt-1.5 flex-shrink-0"></div>
+              <span className="text-sm text-gray-300">Computer vision for crime scene analysis</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 bg-amber-500 rounded-full mt-1.5 flex-shrink-0"></div>
+              <span className="text-sm text-gray-300">NLP analysis of <span className="text-amber-400 font-mono">177+</span> data sources</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
+              <span className="text-sm text-gray-300">Pattern detection across <span className="text-green-400 font-mono">50,000+</span> cases</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0"></div>
+              <span className="text-sm text-gray-300">Real-time intelligence gathering</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* Status Section */}
+        <div className="bg-black/60 border border-amber-900/30 rounded-lg p-6 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="w-5 h-5 text-amber-400" />
+            <h3 className="text-sm font-bold text-amber-300 tracking-wider">STATUS</h3>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="px-3 py-1.5 bg-amber-900/30 border border-amber-700/50 rounded-lg">
+              <span className="text-sm font-mono text-amber-400">MVP Demo</span>
+            </div>
+            <span className="text-sm text-gray-400">Backend integration in progress</span>
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-gray-500 font-mono">DEVELOPMENT ACTIVE</span>
+          </div>
+        </div>
+
+        {/* Contact Section */}
+        <div className="bg-black/60 border border-green-900/30 rounded-lg p-6 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Mail className="w-5 h-5 text-green-400" />
+            <h3 className="text-sm font-bold text-green-300 tracking-wider">CONTACT</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-300">Built by: <span className="text-white font-medium">Dipta Kundu</span></span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Mail className="w-4 h-4 text-gray-500" />
+              <a href="mailto:dipta@koushikiengine.com" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
+                dipta@koushikiengine.com
+              </a>
+            </div>
+            <div className="flex items-center gap-3">
+              <MapPin className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-300">Bengaluru, Karnataka, India</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Registration Section */}
+      <div className="mt-6 bg-black/40 border border-gray-800 rounded-lg p-4">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <Award className="w-5 h-5 text-cyan-500" />
+            <div>
+              <div className="text-[10px] text-gray-500 uppercase tracking-wider">MSME Registration</div>
+              <div className="text-sm font-mono text-cyan-400">UDYAM-KR-03-0647345</div>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] text-gray-600 font-mono">© 2026 KOUSHIKI ENGINE</div>
+            <div className="text-[9px] text-gray-700 mt-0.5">All Rights Reserved</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- COMPONENT 3: SELECTION MENU (ORB GRID) ---
-const SelectionMenu = ({ onSelect }) => {
+const SelectionMenu = ({ onSelect, onBack }) => {
   return (
     <div className="relative z-30 w-full h-full flex flex-col items-center justify-center animate-fade-in-quick">
-      <div className="text-center mb-16">
+      {/* Back Button */}
+      <button
+        onClick={onBack}
+        className="absolute top-4 left-4 md:top-8 md:left-8 p-2 hover:bg-gray-800/50 rounded text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-2"
+      >
+        <ArrowLeftIcon />
+        <span className="text-xs font-mono tracking-wider hidden md:inline">BACK</span>
+      </button>
+
+      <div className="text-center mb-12">
         <div className="text-[10px] font-mono text-gray-500 tracking-[0.3em] mb-3">SELECT OPERATION MODE</div>
         <h2 className="text-3xl md:text-4xl font-orbitron font-black text-white tracking-[0.15em] mb-2">COMMAND MODULE</h2>
         <div className="w-24 h-px bg-gray-700 mx-auto"></div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14">
         <OrbButton title="NAMMALENS" sub="CONTENT ENGINE" icon={Layers} color="gray" disabled={true} />
         <OrbButton title="KOUSHIKI ENGINE" sub="5 CASE DEMO" icon={Database} color="cyan" onClick={() => onSelect('demo')} />
         <OrbButton title="KOUSHIKI ENGINE" sub="LIVE ANALYSIS" icon={Activity} color="amber" onClick={() => onSelect('live')} />
         <OrbButton title="SYSTEM ADMIN" sub="RESTRICTED" icon={Key} color="red" onClick={() => onSelect('admin')} />
+      </div>
+      {/* About Link */}
+      <div className="mt-12">
+        <button
+          onClick={() => onSelect('about')}
+          className="flex items-center gap-2 px-4 py-2 text-gray-500 hover:text-cyan-400 transition-colors group"
+        >
+          <Info className="w-4 h-4" />
+          <span className="text-xs font-mono tracking-wider group-hover:underline">ABOUT KOUSHIKI ENGINE</span>
+        </button>
       </div>
     </div>
   );
@@ -2665,6 +2815,7 @@ export default function App() {
     if (mode === 'demo') setView('demo-list');
     else if (mode === 'admin') setView('admin');
     else if (mode === 'live') setView('live');
+    else if (mode === 'about') setView('about');
     else console.log(`Selected Mode: ${mode}`);
   };
 
@@ -2701,19 +2852,25 @@ export default function App() {
 
       {view === 'landing' && (
         <main className="relative z-30 transform transition-all duration-1000 flex items-center justify-center w-full h-full animate-fade-in-up">
-          <JarvisCore onEnter={handleEnter} />
+          <JarvisCore onEnter={handleEnter} onAbout={() => setView('about')} />
         </main>
       )}
 
       {view === 'selection' && (
         <main className="relative z-30 w-full flex justify-center animate-zoom-in">
-          <SelectionMenu onSelect={handleSelection} />
+          <SelectionMenu onSelect={handleSelection} onBack={() => setView('landing')} />
         </main>
       )}
 
       {view === 'demo-list' && (
         <main className="relative z-30 w-full flex justify-center animate-zoom-in">
           <CaseList onSelectCase={handleCaseSelect} onBack={() => setView('selection')} />
+        </main>
+      )}
+
+      {view === 'about' && (
+        <main className="relative z-30 w-full flex justify-center animate-zoom-in overflow-y-auto max-h-[calc(100vh-80px)]">
+          <AboutKoushikiEngine onBack={() => setView('landing')} />
         </main>
       )}
 
